@@ -7,13 +7,14 @@ class S3Bucket:
     """
         a wrapper for connecting to an s3 bucket instance
     """
-    def __init__(self, name):
+    def __init__(self, name, printer=False):
         self.name = name
-        self.bucket = None
-        self.objects = None
-        self.keys = None
+        self.printer = printer
+        self.bucket = self.connect()
+        self.objects = self.get_objects()
+        self.keys = self.get_keys()
 
-    def connect(self, printer=False):
+    def connect(self):
         s3 = boto3.resource('s3')
         _bucket = s3.Bucket(self.name)
         exists = True
@@ -26,31 +27,25 @@ class S3Bucket:
                 print("{} - Bucket does not exist.".format(error_code))
                 exists = False
 
-        if printer: print("bucket '{}' exists? {}".format(self.name, exists))
+        if self.printer: print("bucket '{}' exists? {}".format(self.name, exists))
         self.bucket = _bucket
 
         return _bucket
 
     def get_objects(self):
-        # Boto 3
-        objects = None
-        if not self.objects:
-            objects = [object for object in self.bucket.objects.all()]
-            self.objects = objects
-        else:
-            objects = self.objects
+        self.objects = [object for object in self.bucket.objects.all()]
 
         return self.objects
 
     def get_keys(self):
-        self.keys = [obj.key for obj in self.objects]
+        self.keys = [obj.key for obj in self.objects if obj.key[-1] != '/']
 
         return self.keys
 
 
 def main():
     bucket = S3Bucket('doodle-bot')
-    bucket.connect(printer=True)
+    bucket.connect()
     bucket.get_objects()
     filenames = bucket.get_keys()
 
@@ -64,8 +59,7 @@ if __name__ == "__main__":
 
     for i, file in enumerate(file_names):
         print(i, file)
-        if file[-1] == '/':  # skip folders
-            continue
+
 
         response = client.detect_labels(Image={'S3Object': {'Bucket': bucket, 'Name': file}}, MinConfidence=25)
 
