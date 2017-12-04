@@ -5,7 +5,7 @@ import botocore
 
 class S3Bucket:
     """
-        a wrapper for connecting to an s3 bucket instance
+        wrapper for connecting to an s3 bucket instance
     """
     def __init__(self, name, printer=False):
         self.name = name
@@ -16,7 +16,7 @@ class S3Bucket:
 
     def connect(self):
         """
-        connect to s3 instance
+            connect to s3 instance
         """
         s3 = boto3.resource('s3')
         _bucket = s3.Bucket(self.name)
@@ -30,7 +30,9 @@ class S3Bucket:
                 print("{} - Bucket does not exist.".format(error_code))
                 exists = False
 
-        if self.printer: print("bucket '{}' exists? {}".format(self.name, exists))
+        if self.printer:
+            print("bucket '{}' exists? {}".format(self.name, exists))
+
         self.bucket = _bucket
         self.objects = self.get_objects()
         self.keys = self.get_keys()
@@ -38,6 +40,7 @@ class S3Bucket:
     def get_objects(self):
         """
         get list of objects in s3 bucket
+
         :return: a list of s3 objects in the bucket
         :rtype: list
         """
@@ -48,6 +51,7 @@ class S3Bucket:
     def get_keys(self):
         """
         get list of file names in s3 bucket
+
         :return: self.keys
         :rtype: list
         """
@@ -58,6 +62,7 @@ class S3Bucket:
     def sample(self, n):
         """
         return random sample of n objects from s3 bucket
+        
         :param n: number of items
         :type n: int
         :return: sample

@@ -53,7 +53,7 @@ def update_image_bucket(bucket, batch_size=100):
             file_path = "tmp/{}.jpg".format(key)           # generate file path
 
             if file_name not in images and not os.path.exists(file_path):  # skip if file exists in bucket or locally
-                if url is not np.NaN:  # skip if
+                if url is not np.NaN:  # skip if NaN
                     print("{}/{} - ".format((downloaded_images + 1), batch_size, i), key)
                     image_downloaded = download_image(key, url)
                     if image_downloaded:  # increment if download was successful
