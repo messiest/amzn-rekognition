@@ -19,7 +19,7 @@ def upload_images(bucket_name, n_images=None):
 
     for i, img in enumerate(os.listdir('tmp/')):
         if img not in existing_images:
-            print("{}/{} - {}".format((i+1), n_images, img))
+            print("{}/{} - Uploading: {}".format((i+1), n_images, img))
 
             data = open("tmp/{}".format(img), 'rb')
             s3.Bucket(BUCKET_NAME).put_object(Key=img, Body=data)
@@ -29,7 +29,7 @@ def upload_images(bucket_name, n_images=None):
             print("DUPLICATE - deleting {}".format(img))
             os.remove("tmp/{}".format(img))  # remove local files that exist in bucket
 
-        if i == n_images:
+        if (i+1) == n_images:
             break
     pass
 
@@ -39,4 +39,4 @@ if __name__ == "__main__":
         upload_images(BUCKET_NAME, n_images=int(sys.argv[1]))
 
     except IndexError:
-        upload_images(BUCKET_NAME, 500)
+        upload_images(BUCKET_NAME)

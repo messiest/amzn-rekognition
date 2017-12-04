@@ -27,7 +27,7 @@ def download_image(key, url):
         data = open(file_path, 'rb')
         s3.Bucket('trackmaven-images').put_object(Key="{}.jpg".format(key), Body=data)  # upload to s3
 
-        os.remove(file_path)  
+        os.remove(file_path)
 
 
         return True

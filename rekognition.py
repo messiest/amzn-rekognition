@@ -14,7 +14,7 @@ class ObjectDetection:  # TODO (@messiest) change this to a function?
         self.printer = printer
         self.client = boto3.client('rekognition')
 
-    def detect(self, bucket, image, threshhold=100):
+    def detect(self, bucket, image, threshhold=75):
         """
         run object detection on image
 
@@ -27,20 +27,13 @@ class ObjectDetection:  # TODO (@messiest) change this to a function?
         :return: dictionary of labels
         :rtype:
         """
-        labels = []
-        while len(labels) == 0:
-            response = self.client.detect_labels(Image={'S3Object': {'Bucket': bucket, 'Name': image}},
-                                                 MinConfidence=threshhold)
-            if self.printer:
-                print('Detected labels for ' + image)
-                for label in response['Labels']:
-                    print("  " + label['Name'] + ' : ' + str(label['Confidence']))
+        response = self.client.detect_labels(Image={'S3Object': {'Bucket': bucket, 'Name': image}}, MinConfidence=threshhold)
+        if self.printer:
+            print('Detected labels for ' + image)
+            for label in response['Labels']:
+                print("  " + label['Name'] + ' : ' + str(label['Confidence']))
 
-            threshhold -= 5
-            if threshhold <= 5:  # break if no objects detected
-                break
-
-            labels = {i['Name']: i['Confidence'] for i in response['Labels']}  # dictionary of features:confidences
+        labels = {i['Name']: i['Confidence'] for i in response['Labels']}  # dictionary of features:confidences
 
         return labels
 
