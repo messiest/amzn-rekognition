@@ -5,10 +5,15 @@ import urllib
 import pandas as pd
 import numpy as np
 
+import boto3
+
 from s3_access import S3Bucket
+
+BUCKET_NAME = "trackmaven-images"
 
 
 def download_image(key, url):
+    s3 = boto3.resource('s3')
     if os.path.exists("tmp/{}.jpg".format(key)):  # don't redownload existing files
         return False
     try:
@@ -19,6 +24,12 @@ def download_image(key, url):
         # TODO (@messiest) add image resizing
         file_path = 'tmp/{}.jpg'.format(key)                       # create file path
         cv2.imwrite(file_path, image)                              # write image to disk
+        data = open(file_path, 'rb')
+        s3.Bucket('trackmaven-images').put_object(Key="{}.jpg".format(key), Body=data)  # upload to s3
+
+        os.remove(file_path)  
+
+
         return True
 
     except:

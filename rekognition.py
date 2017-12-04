@@ -1,4 +1,5 @@
 import sys
+import pickle
 import boto3
 import botocore
 
@@ -48,15 +49,33 @@ def main(n=10):
     obj_detect = ObjectDetection()
     bucket = S3Bucket('trackmaven-images')
     bucket.connect()
-    results = []
-    for i, img in enumerate(bucket.sample(n)):
-        try:
-            labels = obj_detect.detect('trackmaven-images', img)
-            print("{}/{} - ".format((i+1), n), img, labels)
-            results.append((img, labels))  # named tuple of (image, {features:confidence})
 
-        except botocore.errorfactory.InvalidImageFormatException:  # avoids breaking on empty images
-            continue
+    try:
+        results = pickle.load(open('image-tags.pkl', 'rb'))
+        print('loaded pickle')
+        print("Total Images: {}".format(len(results.keys())))
+
+    except:
+        results = {}
+
+    processed_images = 0
+    while processed_images < n:
+        for i, img in enumerate(bucket.sample(n)):
+            try:
+                if img not in results.keys():  # skip files that have already been processed
+                    labels = obj_detect.detect('trackmaven-images', img)
+                    results[img] = labels  # dict[image] = {features:confidence})
+                    processed_images += 1
+
+                    print("{}/{} - ".format(processed_images, n), img, labels)
+                else:
+                    continue
+
+            except botocore.errorfactory.InvalidImageFormatException:  # avoids breaking on empty images
+                continue
+        break
+
+    pickle.dump(results, open('image-tags.pkl', 'wb'))
 
     return results
 
