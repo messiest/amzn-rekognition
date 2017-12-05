@@ -36,7 +36,7 @@ def download_image(key, url):
         return False
 
 
-def update_image_bucket(bucket, batch_size=100):
+def update_image_bucket(bucket, batch_size=None):
     """
     update local files with images that have not yet been transferred to the s3 bucket
 
@@ -50,40 +50,41 @@ def update_image_bucket(bucket, batch_size=100):
     bucket.connect()                                       # connect to bucket
     images = bucket.get_keys()                             # get list of file names
 
-    data_chunks = pd.read_csv('data/pinterest-blogs.csv',  # import data in chunks (for processing speed)
-                              index_col=0,                 # use index column
-                              low_memory=False,            # to deal with multiple dtypes
-                              chunksize=1000)              # rows per chunk
+    data = pd.read_csv('data/pinterest-blogs.csv',
+                       index_col=0,
+                       low_memory=False)
+
+    if batch_size is None:
+        batch_size = data.shape[0] - len(images)           # total posts
 
     downloaded_images = 0                                  # counter for downloads
-    for chunk in data_chunks:                              # iterate over all chunks
-        for i, j in chunk.iterrows():                      # iterate over rows in chunk
-            key = j['uniqueid']                            # get image key
-            url = j['image_url']                           # get image url
-            file_name = "{}.jpg".format(key)               # generate file name
-            file_path = "tmp/{}.jpg".format(key)           # generate file path
+    for i, row in data.iterrows():                         # iterate over rows in chunk
+        key = row['uniqueid']                              # get image key
+        url = row['image_url']                             # get image url
+        file_name = "{}.jpg".format(key)                   # generate file name
+        file_path = "tmp/{}.jpg".format(key)               # generate file path
 
-            if file_name not in images and not os.path.exists(file_path):  # skip if file exists in bucket or locally
-                if url is not np.NaN:  # skip if NaN
-                    print("{}/{} - ".format((downloaded_images + 1), batch_size, i), key)
-                    image_downloaded = download_image(key, url)
-                    if image_downloaded:  # increment if download was successful
-                        downloaded_images += 1
+        if file_name not in images and not os.path.exists(file_path):  # skip if file exists in bucket or locally
+            if url is not np.NaN:  # skip if NaN
+                print("{}/{} - ".format((downloaded_images + 1), batch_size, i), key)
+                image_downloaded = download_image(key, url)
+                if image_downloaded:  # increment if download was successful
+                    downloaded_images += 1
 
-            elif file_name in images and os.path.exists(file_path):  # remove files that already exist in the bucket
-                print("DUPLICATE - deleting {}".format(file_name))
-                os.remove(file_path)
+        elif file_name in images and os.path.exists(file_path):  # remove files that already exist in the bucket
+            print("DUPLICATE - deleting {}".format(file_name))
+            os.remove(file_path)
 
-            if downloaded_images == batch_size:  # end if batch is completed
-                print("Batch complete.")
-                return
+        if downloaded_images == batch_size:  # end if batch is completed
+            print("Batch complete.")
+            return
 
 
 def main(bucket_name='trackmaven-images'):
     try:
         update_image_bucket(bucket_name, batch_size=int(sys.argv[1]))
     except IndexError:
-        update_image_bucket(bucket_name, batch_size=25)
+        update_image_bucket(bucket_name)
 
 
 if __name__ == "__main__":
